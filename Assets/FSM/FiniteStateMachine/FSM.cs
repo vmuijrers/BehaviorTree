@@ -1,7 +1,15 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
+using System.Linq;
+
+public enum StateType {
+    Idle = 0,
+    Hide = 1,
+    Attack = 2,
+    Move   = 3
+}
+
 public class FSM : MonoBehaviour
 {
     internal NavMeshAgent agent;
@@ -10,9 +18,9 @@ public class FSM : MonoBehaviour
     public GameObject[] obstacles;
     internal GameObject currentObstacle;
     public State currentState;
-    public Dictionary<string, State> states;
+    public Dictionary<StateType, State> states;
     public float moveSpeed = 6f;
-    public float sightRange = 0.9f;
+    public float dotProductNeededToHide = 0.9f;
     // Use this for initialization
     void Start()
     {
@@ -20,13 +28,9 @@ public class FSM : MonoBehaviour
         agent.speed = moveSpeed;
         player = GameObject.FindGameObjectWithTag("Player");
         obstacles = GameObject.FindGameObjectsWithTag("Obstacle");
-        states = new Dictionary<string, State>();
-        State[] allStates = GetComponents<State>();
-        foreach (State s in allStates)
-        {
-            states.Add(s.name, s);
-            Debug.Log(s.name + " Added");
-        }
+        states = new Dictionary<StateType, State>();
+ 
+        GetComponents<State>().ToList().ForEach(x => states.Add(x.type, x));
     }
 
     // Update is called once per frame
@@ -35,13 +39,13 @@ public class FSM : MonoBehaviour
         currentState.OnStateUpdate(this);
     }
 
-    public void SwitchToState(string stateName)
+    public void SwitchToState(StateType stateType)
     {
         State newState;
-        if (states.ContainsKey(stateName))
+        if (states.ContainsKey(stateType))
         {
             Debug.Log("Assigned new State");
-            newState = states[stateName];
+            newState = states[stateType];
         }
         else
         {
